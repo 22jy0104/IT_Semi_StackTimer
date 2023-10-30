@@ -71,8 +71,8 @@ void setup(void) {
   ledcAttachPin(BLUE, PWM_CH_BLUE);
 
   ledcWrite(PWM_CH_RED, 0);
-  ledcWrite(PWM_CH_GREEN, 31);
-  ledcWrite(PWM_CH_BLUE, 0);
+  ledcWrite(PWM_CH_GREEN, 0);
+  ledcWrite(PWM_CH_BLUE, 31);
 
   //スイッチのピンをINPUT_PULLUPに
   pinMode(SW_PIN, INPUT_PULLUP);
@@ -105,13 +105,20 @@ void loop() {
     Push_Flg = 0;
   }
 
+  //測定中の動作
   if(Push_Count == 1){
-    ledcWrite(PWM_CH_RED, 0);
-    ledcWrite(PWM_CH_GREEN, 0);
-    ledcWrite(PWM_CH_BLUE, 31);
-
     W_displaytime = millis() - W_time;
 
+    if((int)W_displaytime % 100 < 50){
+      ledcWrite(PWM_CH_RED, 31);
+      ledcWrite(PWM_CH_GREEN, 0);
+      ledcWrite(PWM_CH_BLUE, 0);
+    }else{
+      ledcWrite(PWM_CH_RED, 0);
+      ledcWrite(PWM_CH_GREEN, 31);
+      ledcWrite(PWM_CH_BLUE, 0);
+    }
+    
     //char buff[4];
     //sprintf(buff, "%2d", nowTime);  // 数字を右寄せで表示させるため
     tft.setTextWrap(false);
@@ -133,10 +140,11 @@ void loop() {
       Click_zenkai = Click_konkai;
 
       switch(Push_Count){
+        //測定待機状態
         case 0:
           ledcWrite(PWM_CH_RED, 0);
-          ledcWrite(PWM_CH_GREEN, 31);
-          ledcWrite(PWM_CH_BLUE, 0);
+          ledcWrite(PWM_CH_GREEN, 0);
+          ledcWrite(PWM_CH_BLUE, 31);
 
           tft.fillScreen(ST77XX_BLACK);
           tft.setCursor(15, 50);
@@ -146,6 +154,7 @@ void loop() {
           W_time = millis(); //開始時刻を記録
           Push_Count = 1;
           break;
+        //測定停止状態
         case 1:
           ledcWrite(PWM_CH_RED, 31);
           ledcWrite(PWM_CH_GREEN, 0);
@@ -167,8 +176,10 @@ void loop() {
             }
           }
           tft.print(W_sec); tft.print("s:");
-          if(W_msec < 100){
-            tft.print(0);   //100ミリ秒未満の時は先頭に0を表示
+          if(W_msec < 10){
+            tft.print("00");   //10ミリ秒未満の時は先頭に00を表示
+          }else if(W_msec < 100){
+            tft.print("0");   //100ミリ秒未満の時は先頭に0を表示
           }
           tft.print(W_msec); tft.print("ms");
           while(digitalRead(SW_PIN) == LOW){
